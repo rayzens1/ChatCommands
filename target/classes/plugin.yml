@@ -1,0 +1,9 @@
+name: ChatCommands
+version: '1.0-SNAPSHOT'
+main: fr.chatcommands.ChatCommands
+api-version: '1.20'
+commands:
+  me:
+    description: Envoie un message aux joueurs proches de l'action réalisé.
+  roll:
+    description: Envoie un message avec un roll aléatoire (1-100).

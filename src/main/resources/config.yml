@@ -1,0 +1,6 @@
+messages:
+  meMessage: "%player% a dit : %message%"
+  rollMessage: "%player% a fait un roll de %roll%!"
+settings:
+  meMessageDistance: 15
+  rollMessageDistance: 15
