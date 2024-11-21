@@ -7,3 +7,22 @@ commands:
     description: Envoie un message aux joueurs proches de l'action réalisé.
   roll:
     description: Envoie un message avec un roll aléatoire (1-100).
+  narration:
+    description: Envoie un message avec un roll aléatoire (1-100).
+    permission: narration.use
+  itemedit:
+    description: Modifie les propriétés de l'objet dans la main du joueur.
+    permission: itemedit.use
+    arguments:
+      - name
+      - custommodeldata
+      - lore
+  debugmain:
+    description: Debug la seconde main
+  carry:
+    description: Porte un joueur proche.
+    usage: /carry
+  givexp:
+    description: Donne de l'expérience à tous les joueurs dans un rayon.
+    usage: /givexp <montant> d:<range>
+    permission: givexp.use

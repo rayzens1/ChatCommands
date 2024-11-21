@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="ChatCommands">
-    <output-path>$PROJECT_DIR$</output-path>
+    <output-path>$PROJECT_DIR$/../servertest1.20.1/plugins</output-path>
     <root id="archive" name="ChatCommands.jar">
       <element id="module-output" name="ChatCommands" />
     </root>

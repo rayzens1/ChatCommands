@@ -22,6 +22,12 @@ public final class ChatCommands extends JavaPlugin implements CommandExecutor {
         getCommand("me").setExecutor(this);
         getCommand("roll").setExecutor(this);
 
+        this.getCommand("itemedit").setExecutor(new ItemEditCommand());
+        this.getCommand("debugmain").setExecutor(new DebugMainCommand());
+        this.getCommand("carry").setExecutor(new CarryCommand());
+
+        this.getCommand("givexp").setExecutor(new GiveXPCommand());
+
         saveDefaultConfig();
     }
 
@@ -36,12 +42,42 @@ public final class ChatCommands extends JavaPlugin implements CommandExecutor {
             Player player = (Player) sender;
 
             if (label.equalsIgnoreCase("me")) {
-                if (args.length == 0) {
-                    player.sendMessage(ChatColor.RED + "Usage: /me <message>");
+                // Vérification de base
+                if (args.length < 2) {
+                    sender.sendMessage(ChatColor.RED + "Usage: /me <message> d:<distance>");
                     return false;
                 }
 
-                String message = String.join(" ", args);
+                // Récupérer l'argument de distance
+                String lastArg = args[args.length - 1];
+                if (!lastArg.startsWith("d:")) {
+                    sender.sendMessage(ChatColor.RED + "Le dernier argument doit spécifier la distance sous la forme d:<distance>.");
+                    return false;
+                }
+
+                // Extraire la distance
+                int distance;
+                try {
+                    distance = Integer.parseInt(lastArg.substring(2));
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(ChatColor.RED + "La distance spécifiée est invalide.");
+                    return false;
+                }
+
+                // Construire le message
+                StringBuilder messageBuilder = new StringBuilder();
+                for (int i = 0; i < args.length - 1; i++) { // Exclure l'argument "d:<distance>"
+                    messageBuilder.append(args[i]).append(" ");
+                }
+                String message = messageBuilder.toString().trim();
+
+                // Vérifier si la distance maximale est inférieure ou égale à celle définie dans la configuration
+                int configDistance = getConfig().getInt("settings.meMessageDistance", 15);
+                if (distance > configDistance) {
+                    distance = configDistance;
+                    player.sendMessage(ChatColor.YELLOW + "La distance maximale est de (" + configDistance + " blocs).");
+                    return false;
+                }
 
                 String meMessageTemplate = getConfig().getString("messages.meMessage");
 
@@ -50,33 +86,117 @@ public final class ChatCommands extends JavaPlugin implements CommandExecutor {
                         .replace("%player%", player.getName())
                         .replace("%message%", message));
 
-                envoyerMessageProximite(player, message);
-                creerHologrammeTemporaire(player, meMessage);
+                envoyerMessageProximite(player, message, distance);
+
 
             } else if (label.equalsIgnoreCase("roll")) {
-                Random random = new Random();
-                int roll = random.nextInt(100) + 1;
-                String rollString;
-                if(roll>=50) {
-                    rollString = ChatColor.GREEN+String.valueOf(roll);
-                } else {
-                    rollString = ChatColor.RED+String.valueOf(roll);
+                if (args.length < 1) {
+                    player.sendMessage(ChatColor.RED + "Usage: /roll <distance_max>");
+                    return false;
                 }
 
-                String rollMessageTemplate = getConfig().getString("messages.rollMessage");
-                String rollMessage = ChatColor.translateAlternateColorCodes('&', rollMessageTemplate
-                        .replace("%player%", player.getName())
-                        .replace("%roll%", rollString));
+                if(args.length > 0) {
 
-                envoyerMessageProximiteRoll(player, rollMessage);
-                creerHologrammeTemporaire(player, rollMessage);
+                    // Récupérer la distance depuis l'argument
+                    int maxDistance;
+                    try {
+                        maxDistance = Integer.parseInt(args[0]);
+                    } catch (NumberFormatException e) {
+                        player.sendMessage(ChatColor.RED + "Veuillez entrer une distance valide.");
+                        return false;
+                    }
+
+                    // Vérifier si la distance maximale est inférieure ou égale à celle définie dans la configuration
+                    int configDistance = getConfig().getInt("settings.meMessageDistance", 15);
+                    if (maxDistance > configDistance) {
+                        maxDistance = configDistance;
+                        player.sendMessage(ChatColor.YELLOW + "La distance maximale est de (" + configDistance + " blocs).");
+                        return false;
+                    }
+
+                    Random random = new Random();
+                    int roll = random.nextInt(100) + 1;
+                    String rollString;
+                    if(roll>=50) {
+                        rollString = ChatColor.GREEN+String.valueOf(roll);
+                    } else {
+                        rollString = ChatColor.RED+String.valueOf(roll);
+                    }
+
+                    String rollMessageTemplate = getConfig().getString("messages.rollMessage");
+                    String rollMessage = ChatColor.translateAlternateColorCodes('&', rollMessageTemplate
+                            .replace("%player%", player.getName())
+                            .replace("%roll%", rollString));
+
+                    envoyerMessageProximiteRoll(player, rollMessage, maxDistance);
+
+
+                } else {
+                    player.sendMessage(ChatColor.RED + "Usage: /roll <distance_max>");
+                    return false;
+                }
+            } else if (command.getName().equalsIgnoreCase("narration")) {
+                // Vérifier qu'il y a au moins deux arguments (message + range)
+                if (args.length < 2) {
+                    sender.sendMessage(ChatColor.RED + "Usage: /narration <message> d:<range>");
+                    return false;
+                }
+
+                // Récupérer l'argument range
+                String lastArg = args[args.length - 1];
+                if (!lastArg.startsWith("d:")) {
+                    sender.sendMessage(ChatColor.RED + "Le dernier argument doit spécifier la portée sous la forme d:<distance>.");
+                    return false;
+                }
+
+                // Extraire la distance
+                int range;
+                try {
+                    range = Integer.parseInt(lastArg.substring(2));
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(ChatColor.RED + "La portée spécifiée est invalide.");
+                    return false;
+                }
+
+                // Construire le message
+                StringBuilder messageBuilder = new StringBuilder();
+                for (int i = 0; i < args.length - 1; i++) { // Exclure le dernier argument "d:<distance>"
+                    messageBuilder.append(args[i]).append(" ");
+                }
+                String message = messageBuilder.toString().trim();
+
+                // Format du message
+                String formattedMessage = ChatColor.GOLD + "\n"
+                        + ChatColor.GOLD + "=====================================================\n"
+                        + ChatColor.GOLD + "\n"
+                        + ChatColor.YELLOW + ChatColor.BOLD+"                       Narration\n"
+                        + ChatColor.WHITE + "\n " + message + "\n"
+                        + ChatColor.GOLD + "\n"
+                        + ChatColor.GOLD + "====================================================="
+                        + ChatColor.GOLD + "\n";
+
+                // Envoyer le message à proximité
+                if (sender instanceof Player) {
+                    player = (Player) sender;
+
+                    // Diffuser le message aux joueurs dans le rayon spécifié
+                    Player finalPlayer = player;
+                    player.getWorld().getPlayers().stream()
+                            .filter(p -> p.getLocation().distance(finalPlayer.getLocation()) <= range)
+                            .forEach(p -> p.sendMessage(formattedMessage));
+
+                    sender.sendMessage(ChatColor.GREEN + "Narration envoyée aux joueurs dans un rayon de " + range + " blocs.");
+                } else {
+                    sender.sendMessage(ChatColor.RED + "Seuls les joueurs peuvent utiliser cette commande.");
+                }
+                return true;
             }
             return true;
         }
         return false;
     }
 
-    private void envoyerMessageProximite(Player player, String message) {
+    private void envoyerMessageProximite(Player player, String message, int distance) {
         Location playerLocation = player.getLocation();
         String meMessageTemplate = getConfig().getString("messages.meMessage");
 
@@ -84,9 +204,6 @@ public final class ChatCommands extends JavaPlugin implements CommandExecutor {
         String meMessage = ChatColor.translateAlternateColorCodes('&', meMessageTemplate
                 .replace("%player%", player.getName())
                 .replace("%message%", message));
-
-        // Récupère la distance depuis la configuration
-        int distance = getConfig().getInt("settings.meMessageDistance", 15);  // Valeur par défaut de 15 si non défini
 
         // Envoi du message aux joueurs à proximité
         player.getWorld().getNearbyEntities(playerLocation, distance, distance, distance).forEach(entity -> {
@@ -98,7 +215,7 @@ public final class ChatCommands extends JavaPlugin implements CommandExecutor {
         getLogger().info(player.getName() + " a utilisé la commande /me avec le message : " + meMessage);
     }
 
-    private void envoyerMessageProximiteRoll(Player player, String message) {
+    private void envoyerMessageProximiteRoll(Player player, String message, int distance) {
         Location playerLocation = player.getLocation();
         String meMessageTemplate = getConfig().getString("messages.meMessage");
 
@@ -106,9 +223,6 @@ public final class ChatCommands extends JavaPlugin implements CommandExecutor {
         String meMessage = ChatColor.translateAlternateColorCodes('&', meMessageTemplate
                 .replace("%player%", player.getName())
                 .replace("%message%", message));
-
-        // Récupère la distance depuis la configuration
-        int distance = getConfig().getInt("settings.rollMessageDistance", 15);  // Valeur par défaut de 15 si non défini
 
         // Envoi du message aux joueurs à proximité
         player.getWorld().getNearbyEntities(playerLocation, distance, distance, distance).forEach(entity -> {
